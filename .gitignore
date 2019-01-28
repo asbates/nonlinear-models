@@ -1,0 +1,13 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+
+# extra latex files
+*-concordance.tex
+*.log
+*.synctex.gz
+
+# knitr cache folders
+*_cache/
+*_files/

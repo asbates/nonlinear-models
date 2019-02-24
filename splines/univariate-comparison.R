@@ -29,17 +29,37 @@ natural_spline <- lm(y ~ ns(x, df = 6), data = df)
 smooth_spline <- smooth.spline(df$x, df$y, cv = TRUE)
 
 
+# append to original data frame
+model_df <- df %>% 
+  bind_cols(b_spline = b_spline$fitted.values,
+            natural_spline = natural_spline$fitted.values,
+            smooth_spline = fitted.values(smooth_spline)) %>% 
+  gather(true_y, b_spline, natural_spline, smooth_spline, 
+         key = "model", value = "fit")
+
+model_df
+
+ggplot(model_df, aes(x, y)) +
+  geom_point() +
+  geom_line(aes(x, fit, color = model))
+
+
+# now more complicated data
+set.seed(42)
+x <- rnorm(500)
+y <- sin(2*x) + exp(0.5*x) + rnorm(500)
+true_y <- sin(2*x) + exp(0.5*x)
+df <- tibble(x, y, true_y)
+
 ggplot(df, aes(x, y)) +
   geom_point() +
-  geom_line(aes(x, true_y), color = turq) +
-  geom_line(aes(x, b_spline$fitted.values)) +
-  geom_line(aes(x, natural_spline$fitted.values)) +
-  geom_line(aes(x, smooth_spline$y))
+  geom_line(aes(x, true_y), color = turq)
 
 
-plot(x, y, pch = 16)
-lines(smooth_spline)
-
+# fit 3 types of splines
+b_spline <- lm(y ~ bs(x, df = 6), data = df)
+natural_spline <- lm(y ~ ns(x, df = 6), data = df)
+smooth_spline <- smooth.spline(df$x, df$y, cv = TRUE)
 
 
 # append to original data frame
@@ -55,4 +75,3 @@ model_df
 ggplot(model_df, aes(x, y)) +
   geom_point() +
   geom_line(aes(x, fit, color = model))
-

@@ -16,6 +16,7 @@ df <- expand.grid(x = -10:10, y = -10:10) %>%
 
 wireframe(z ~ x*y, df)
 
+# takes x,y and not formula
 model_x <- df %>% select(x,y)
 model_y <- df %>% select(z)
 
@@ -35,10 +36,36 @@ persp(predictSurface(fit))
 ?predictSE.Krig
 predictSE(fit)
 
-df <- df %>% 
-  mutate(true_z = y + x^2 + y^2 - x*y - x^2*y)
-
 pred_tps <- predict(fit)
+
+# add predicted and true values
+df <- df %>% 
+  mutate(true_z = y + x^2 + y^2 - x*y - x^2*y) %>% 
+  mutate(fitted_z = as.vector(pred_tps))
+
+
+# surface plot with fitted values
+
+# to get both points and surface
+# thanks to 
+# https://stackoverflow.com/questions/1406202/
+# plotting-a-wireframe-and-a-cloud-with-lattice-in-r
+
+wire_cloud <- function(x, y, z, point_z, ...){
+  panel.wireframe(x, y, z, ...)
+  panel.cloud(x, y, point_z, ...)
+}
+
+# first with the data as above
+wireframe(z ~ x*y, data = df,
+          panel = wire_cloud, point_z = df$fitted_z,
+          pch = 16)
+
+# now with the true surface
+wireframe(true_z ~ x*y, data = df,
+          panel = wire_cloud, point_z = df$fitted_z,
+          pch = 16)
+
 
 
 rmse_tps <- sqrt( mean( (pred_tps - df$true_z)^2 ) )

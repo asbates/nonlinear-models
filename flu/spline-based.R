@@ -58,34 +58,68 @@ x_train <- flu_train %>%
 y_train <- flu_train %>% 
   select(ilitotal)
 
+x_test <- flu_test %>% 
+  select(starts_with("lag"))
+
+y_test <- flu_test %>% 
+  select(ilitotal)
+
 flu_tps <- Tps(x_train, y_train)
 
 plot(flu_tps)
 
-flu_train %>% 
-  mutate(.pred = predict(flu_tps)[,1]) %>% 
-  ggplot(aes(week_start, ilitotal)) +
-  geom_line() +
-  geom_line(aes(y = .pred), color = "grey")
+flu_train <- flu_train %>% 
+  mutate(.pred_tps = predict(flu_tps)[,1])
 
 flu_train %>% 
-  mutate(.pred = predict(flu_tps)[,1]) %>% 
-  yardstick::metrics(truth = ilitotal, estimate = .pred)
+  ggplot(aes(week_start, ilitotal)) +
+  geom_line() +
+  geom_line(aes(y = .pred_tps), color = "grey")
+
+flu_train %>% 
+  yardstick::metrics(truth = ilitotal, estimate = .pred_tps)
 
 
 flu_mars <- earth(
   ilitotal ~ lag_ilitotal + lag2_ilitotal + lag3_ilitotal + lag4_ilitotal,
   data = flu_train)
 
-flu_train %>% 
-  mutate(.pred = predict(flu_mars)[,1]) %>% 
-  ggplot(aes(week_start, ilitotal)) +
-  geom_line() +
-  geom_line(aes(y = .pred), color = "grey")
+flu_train <- flu_train %>% 
+  mutate(.pred_mars = predict(flu_mars)[,1])
 
 flu_train %>% 
-  mutate(.pred = predict(flu_mars)[,1]) %>% 
-  yardstick::metrics(truth = ilitotal, estimate = .pred)
+  ggplot(aes(week_start, ilitotal)) +
+  geom_line() +
+  geom_line(aes(y = .pred_mars), color = "grey")
+
+flu_train %>% 
+  yardstick::metrics(truth = ilitotal, estimate = .pred_mars)
+
+
+flu_gam <- gam(
+  ilitotal ~ s(lag_ilitotal) + s(lag2_ilitotal) + 
+             s(lag2_ilitotal) + s(lag4_ilitotal),
+  data = flu_train,
+  method = "REML")
+
+flu_train <- flu_train %>% 
+  mutate(.pred_gam = predict(flu_gam))
+
+flu_train %>% 
+  ggplot(aes(week_start, ilitotal)) +
+  geom_line() +
+  geom_line(aes(y = .pred_gam), color = "grey")
+
+
+flu_train %>% 
+  yardstick::metrics(truth = ilitotal, estimate = .pred_gam)
+
+
+flu_test %>% 
+  mutate(.pred_tps = predict(flu_tps,x = x_test)[,1]) %>% 
+  ggplot(aes(week_start, ilitotal)) +
+  geom_line() +
+  geom_line(aes(y = .pred_tps), color = "grey")
 
 # shoud we also include lags of number of providers?
 # fewer providers reporting might mean lower number of reported cases
